@@ -23,7 +23,7 @@ jobs:
           cp -rn temp_extracted/* .
           rm -rf temp_extracted
 
-      # Force the required minimum Gradle version
+      # Force the required Gradle version
       - name: Force Gradle 9.3.1
         run: |
           mkdir -p gradle/wrapper
@@ -41,13 +41,13 @@ jobs:
           gradle-version: 9.3.1
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
-        # Fallback if gradlew is missing:
-        # run: gradle assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace
 
       - name: Upload Compiled APK
         uses: actions/upload-artifact@v4
         with:
           name: packet-shark-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            **/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
