@@ -8,7 +8,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -19,27 +19,34 @@ jobs:
       - name: Extract packet-shark.zip
         run: |
           if [ ! -f packet-shark.zip ]; then
-            echo "Error: packet-shark.zip not found in root directory!"
+            echo "::error::packet-shark.zip was not found in the root directory!"
+            echo "Current files in repository:"
             ls -la
             exit 1
           fi
+          
+          mkdir -p temp_extracted
           unzip -o packet-shark.zip -d temp_extracted
-          if ls temp_extracted/*/gradlew 1> /dev/null 2>&1; then
-            cp -rn temp_extracted/*/* .
-          else
-            cp -rn temp_extracted/* .
+          
+          # Find where gradlew is located inside the zip
+          GRADLEW_PATH=$(find temp_extracted -name gradlew | head -n 1)
+          
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "::error::gradlew script was not found anywhere inside packet-shark.zip!"
+            echo "Contents of extracted zip:"
+            find temp_extracted -maxdepth 3
+            exit 1
           fi
+          
+          PROJECT_ROOT=$(dirname "$GRADLEW_PATH")
+          echo "Found project root at: $PROJECT_ROOT"
+          
+          # Copy project contents to current working directory
+          cp -rn "$PROJECT_ROOT"/* .
           rm -rf temp_extracted
 
       - name: Make Gradlew Executable
-        run: |
-          if [ -f gradlew ]; then
-            chmod +x gradlew
-          else
-            echo "Error: gradlew file not found after unzipping!"
-            ls -la
-            exit 1
-          fi
+        run: chmod +x gradlew
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
