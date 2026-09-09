@@ -23,12 +23,23 @@ jobs:
           cp -rn temp_extracted/* .
           rm -rf temp_extracted
 
-      # Create the missing file that Secrets Gradle Plugin requires
-      - name: Create .env.example
+      - name: Create required missing files
         run: |
+          # 1. Required by Secrets Gradle Plugin
           touch .env.example
-          # Optional: put dummy keys if the build needs real values
-          # echo "MAPS_API_KEY=dummy" >> .env.example
+
+          # 2. Required by custom signingConfig 'debugConfig'
+          keytool -genkeypair \
+            -v \
+            -storetype PKCS12 \
+            -keystore debug.keystore \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass android \
+            -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Force Gradle 9.3.1
         run: |
