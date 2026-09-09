@@ -1,0 +1,40 @@
+name: Build Packet Shark APK
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Extract packet-shark.zip
+        run: |
+          unzip -o packet-shark.zip -d temp_extracted
+          # Move contents if the zip contained a top-level wrapper folder
+          if ls temp_extracted/*/gradlew 1> /dev/null 2>&1; then
+            cp -r temp_extracted/*/* .
+          else
+            cp -r temp_extracted/* .
+          fi
+          rm -rf temp_extracted
+
+      - name: Make Gradlew Executable
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload Compiled APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: packet-shark-apk
+          path: app/build/outputs/apk/debug/*.apk
