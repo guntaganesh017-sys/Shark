@@ -18,35 +18,20 @@ jobs:
 
       - name: Extract packet-shark.zip
         run: |
-          if [ ! -f packet-shark.zip ]; then
-            echo "::error::packet-shark.zip was not found in the root directory!"
-            echo "Current files in repository:"
-            ls -la
-            exit 1
-          fi
-          
           mkdir -p temp_extracted
           unzip -o packet-shark.zip -d temp_extracted
-          
-          # Find where gradlew is located inside the zip
-          GRADLEW_PATH=$(find temp_extracted -name gradlew | head -n 1)
-          
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "::error::gradlew script was not found anywhere inside packet-shark.zip!"
-            echo "Contents of extracted zip:"
-            find temp_extracted -maxdepth 3
-            exit 1
-          fi
-          
-          PROJECT_ROOT=$(dirname "$GRADLEW_PATH")
-          echo "Found project root at: $PROJECT_ROOT"
-          
-          # Copy project contents to current working directory
-          cp -rn "$PROJECT_ROOT"/* .
+          cp -rn temp_extracted/* .
           rm -rf temp_extracted
 
-      - name: Make Gradlew Executable
-        run: chmod +x gradlew
+      # Generates gradlew dynamically if missing from the zip
+      - name: Ensure Gradle Wrapper Exists
+        run: |
+          if [ ! -f gradlew ]; then
+            echo "gradlew not found. Generating wrapper..."
+            sudo apt-get update && sudo apt-get install -y gradle
+            gradle wrapper
+          fi
+          chmod +x gradlew
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
