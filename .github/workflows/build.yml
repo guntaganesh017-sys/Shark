@@ -11,7 +11,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -23,7 +23,13 @@ jobs:
           cp -rn temp_extracted/* .
           rm -rf temp_extracted
 
-      # Force the required Gradle version
+      # Create the missing file that Secrets Gradle Plugin requires
+      - name: Create .env.example
+        run: |
+          touch .env.example
+          # Optional: put dummy keys if the build needs real values
+          # echo "MAPS_API_KEY=dummy" >> .env.example
+
       - name: Force Gradle 9.3.1
         run: |
           mkdir -p gradle/wrapper
@@ -48,6 +54,6 @@ jobs:
         with:
           name: packet-shark-apk
           path: |
-            app/build/outputs/apk/debug/*.apk
             **/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
