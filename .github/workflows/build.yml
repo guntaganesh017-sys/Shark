@@ -23,18 +23,26 @@ jobs:
           cp -rn temp_extracted/* .
           rm -rf temp_extracted
 
-      # Generate a modern Gradle wrapper (8.5) that supports Java 17
-      - name: Setup Modern Gradle Wrapper
+      # Directly inject Gradle 8.10.2 into gradle-wrapper.properties
+      - name: Force Gradle 8.10.2 Version
         run: |
-          if [ ! -f gradlew ]; then
-            echo "Generating Gradle 8.5 wrapper..."
-            sudo apt-get update && sudo apt-get install -y gradle
-            gradle wrapper --gradle-version 8.5
-          fi
-          chmod +x gradlew
+          mkdir -p gradle/wrapper
+          cat << 'EOF' > gradle/wrapper/gradle-wrapper.properties
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.10.2-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+
+      # Setup official Gradle Action to download and execute Gradle 8.10.2 properly
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.10.2
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace
 
       - name: Upload Compiled APK
         uses: actions/upload-artifact@v4
